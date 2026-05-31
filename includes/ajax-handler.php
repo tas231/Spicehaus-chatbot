@@ -255,7 +255,7 @@ function spicehaus_call_gemini( string $api_key, string $system, array $messages
         ],
     ] );
 
-    $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' . rawurlencode( $api_key );
+    $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=' . rawurlencode( $api_key );
 
     $response = wp_remote_post( $url, [
         'timeout' => 30,
