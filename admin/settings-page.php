@@ -26,6 +26,9 @@ add_action( 'admin_init', function () {
     register_setting( 'spicehaus_chatbot', 'spicehaus_chatbot_products', [
         'sanitize_callback' => 'spicehaus_sanitize_products_json',
     ] );
+    register_setting( 'spicehaus_chatbot', 'spicehaus_chatbot_system_prompt', [
+        'sanitize_callback' => 'sanitize_textarea_field',
+    ] );
 } );
 
 function spicehaus_sanitize_products_json( string $input ): string {
@@ -44,10 +47,12 @@ function spicehaus_sanitize_products_json( string $input ): string {
 function spicehaus_render_settings_page(): void {
     if ( ! current_user_can( 'manage_options' ) ) return;
 
-    $provider   = get_option( 'spicehaus_chatbot_provider',   'claude' );
-    $claude_key = get_option( 'spicehaus_chatbot_api_key',    '' );
-    $gemini_key = get_option( 'spicehaus_chatbot_gemini_key', '' );
-    $products   = get_option( 'spicehaus_chatbot_products',   '' );
+    $provider      = get_option( 'spicehaus_chatbot_provider',      'claude' );
+    $claude_key    = get_option( 'spicehaus_chatbot_api_key',       '' );
+    $gemini_key    = get_option( 'spicehaus_chatbot_gemini_key',    '' );
+    $products      = get_option( 'spicehaus_chatbot_products',      '' );
+    $saved_prompt  = get_option( 'spicehaus_chatbot_system_prompt', '' );
+    $system_prompt = ! empty( trim( $saved_prompt ) ) ? $saved_prompt : spicehaus_default_system_prompt();
 
     if ( empty( $products ) ) {
         $file = SPICEHAUS_CHATBOT_PATH . 'data/products.json';
@@ -137,6 +142,28 @@ function spicehaus_render_settings_page(): void {
                 </tr>
             </table>
 
+            <h2>AI System Prompt</h2>
+            <p>This is the instruction the AI receives before every conversation. Use <code>{{product_list}}</code> as the placeholder where the product catalog will be inserted — <strong>do not remove it</strong>.</p>
+            <table class="form-table" role="presentation">
+                <tr>
+                    <th scope="row">
+                        <label for="spicehaus_chatbot_system_prompt">System Prompt</label>
+                    </th>
+                    <td>
+                        <textarea
+                            id="spicehaus_chatbot_system_prompt"
+                            name="spicehaus_chatbot_system_prompt"
+                            rows="22"
+                            class="large-text code"
+                            spellcheck="false"
+                        ><?php echo esc_textarea( $system_prompt ); ?></textarea>
+                        <p class="description">
+                            <button type="button" id="sc-reset-prompt" class="button button-secondary" style="margin-top:4px">↩ Reset to default prompt</button>
+                        </p>
+                    </td>
+                </tr>
+            </table>
+
             <h2>Product Catalog (JSON)</h2>
             <p>Edit the JSON array below, or use the <strong>CSV Import</strong> section below to upload your store's product list.
                Each entry supports: <code>name</code>, <code>url</code>, <code>allergens</code>, <code>tags</code>.</p>
@@ -172,9 +199,7 @@ function spicehaus_render_settings_page(): void {
         <p><strong>Required columns:</strong> <code>name</code>, <code>url</code><br>
            <strong>Optional columns:</strong> <code>allergens</code>, <code>tags</code> (use <code>|</code> or <code>,</code> to separate multiple tags)</p>
         <p>
-            <a href="<?php echo esc_url( SPICEHAUS_CHATBOT_URL . 'data/sample-products.csv' ); ?>" download class="button button-secondary">
-                ⬇ Download sample CSV template
-            </a>
+            <button type="button" id="sc-csv-download" class="button button-secondary">⬇ Download sample CSV template</button>
         </p>
 
         <div id="sc-csv-wrap">
@@ -280,6 +305,37 @@ function spicehaus_render_settings_page(): void {
                 status.style.color = 'red';
                 status.textContent = '❌ Network error. Please try again.';
             });
+        });
+
+        // Sample CSV download (JS blob — avoids server file-serving issues)
+        document.getElementById('sc-csv-download').addEventListener('click', function () {
+            var csv = "name,url,allergens,tags\n" +
+                "Kurkuma gemahlen,https://spice-haus.de/products/kurkuma-gemahlen,none,spice|indian|anti-inflammatory\n" +
+                "Paprika edelsüß,https://spice-haus.de/products/paprika-edelsuess,none,spice|hungarian|mild\n" +
+                "Paprika scharf,https://spice-haus.de/products/paprika-scharf,none,spice|hot|hungarian\n" +
+                "Garam Masala,https://spice-haus.de/products/garam-masala,none,spice-blend|indian\n" +
+                "Curry Pulver mild,https://spice-haus.de/products/curry-pulver-mild,contains mustard,spice-blend|indian|mild\n" +
+                "Za'atar,https://spice-haus.de/products/zaatar,contains sesame,spice-blend|middle-eastern\n" +
+                "Schwarzer Sesam,https://spice-haus.de/products/schwarzer-sesam,contains sesame,seed|asian|topping\n" +
+                "Senfsamen gelb,https://spice-haus.de/products/senfsamen-gelb,contains mustard,spice|indian|pickling\n" +
+                "Basmati Reis,https://spice-haus.de/products/basmati-reis,none,grain|rice|indian\n" +
+                "Kichererbsen,https://spice-haus.de/products/kichererbsen,none,legume|protein|middle-eastern\n";
+            var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            var url  = URL.createObjectURL(blob);
+            var a    = document.createElement('a');
+            a.href     = url;
+            a.download = 'sample-products.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+        // Reset system prompt to default
+        document.getElementById('sc-reset-prompt').addEventListener('click', function () {
+            if (!confirm('Reset the prompt to the default? Your current edits will be lost.')) return;
+            var defaultPrompt = <?php echo wp_json_encode( spicehaus_default_system_prompt() ); ?>;
+            document.getElementById('spicehaus_chatbot_system_prompt').value = defaultPrompt;
         });
     })();
     </script>

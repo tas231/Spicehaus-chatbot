@@ -155,26 +155,8 @@ function spicehaus_handle_csv_import(): void {
 
 /* ── System prompt ──────────────────────────────────────────────────────── */
 
-function spicehaus_build_system_prompt( array $catalog ): string {
-    $lines = [];
-    foreach ( $catalog as $product ) {
-        if ( empty( $product['name'] ) ) continue;
-        $line = '- ' . $product['name'];
-        if ( ! empty( $product['url'] ) ) {
-            $line .= ' → ' . $product['url'];
-        }
-        if ( ! empty( $product['allergens'] ) && $product['allergens'] !== 'none' ) {
-            $line .= ' [⚠️ ' . $product['allergens'] . ']';
-        }
-        if ( ! empty( $product['tags'] ) && is_array( $product['tags'] ) ) {
-            $line .= ' (' . implode( ', ', $product['tags'] ) . ')';
-        }
-        $lines[] = $line;
-    }
-    $product_list = implode( "\n", $lines );
-
-    return <<<PROMPT
-You are the friendly recipe assistant for Spicehaus (spice-haus.de), a German shop that sells quality spices, grains, and groceries.
+function spicehaus_default_system_prompt(): string {
+    return 'You are the friendly recipe assistant for Spicehaus (spice-haus.de), a German shop that sells quality spices, grains, and groceries.
 
 Your primary goal is to help customers discover delicious recipes using products from the Spicehaus catalog — and to upsell by highlighting which catalog items they can pick up in the store.
 
@@ -195,8 +177,33 @@ STRICT RULES:
     d) End with the "Shop these ingredients" block as usual.
 
 SPICEHAUS PRODUCT CATALOG:
-$product_list
-PROMPT;
+{{product_list}}';
+}
+
+function spicehaus_build_system_prompt( array $catalog ): string {
+    $lines = [];
+    foreach ( $catalog as $product ) {
+        if ( empty( $product['name'] ) ) continue;
+        $line = '- ' . $product['name'];
+        if ( ! empty( $product['url'] ) ) {
+            $line .= ' → ' . $product['url'];
+        }
+        if ( ! empty( $product['allergens'] ) && $product['allergens'] !== 'none' ) {
+            $line .= ' [⚠️ ' . $product['allergens'] . ']';
+        }
+        if ( ! empty( $product['tags'] ) && is_array( $product['tags'] ) ) {
+            $line .= ' (' . implode( ', ', $product['tags'] ) . ')';
+        }
+        $lines[] = $line;
+    }
+    $product_list = implode( "\n", $lines );
+
+    $template = get_option( 'spicehaus_chatbot_system_prompt', '' );
+    if ( empty( trim( $template ) ) ) {
+        $template = spicehaus_default_system_prompt();
+    }
+
+    return str_replace( '{{product_list}}', $product_list, $template );
 }
 
 /* ── Claude API ─────────────────────────────────────────────────────────── */
