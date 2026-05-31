@@ -2,246 +2,295 @@
   {
     "name": "Kurkuma gemahlen",
     "url": "https://spice-haus.de/products/kurkuma-gemahlen",
+    "allergens": "none",
     "tags": ["spice", "indian", "anti-inflammatory"]
   },
   {
     "name": "Paprika edelsüß",
     "url": "https://spice-haus.de/products/paprika-edelsuess",
+    "allergens": "none",
     "tags": ["spice", "hungarian", "mild"]
   },
   {
     "name": "Paprika scharf",
     "url": "https://spice-haus.de/products/paprika-scharf",
+    "allergens": "none",
     "tags": ["spice", "hot", "hungarian"]
   },
   {
     "name": "Paprika geräuchert",
     "url": "https://spice-haus.de/products/paprika-geraeuchert",
+    "allergens": "none",
     "tags": ["spice", "smoked", "spanish"]
   },
   {
     "name": "Kreuzkümmel gemahlen",
-    "url": "https://spice-haus.de/products/kreuzküommel-gemahlen",
+    "url": "https://spice-haus.de/products/kreuzkuemmel-gemahlen",
+    "allergens": "none",
     "tags": ["spice", "middle-eastern", "indian"]
   },
   {
     "name": "Kreuzkümmel ganz",
-    "url": "https://spice-haus.de/products/kreuzküommel-ganz",
+    "url": "https://spice-haus.de/products/kreuzkuemmel-ganz",
+    "allergens": "none",
     "tags": ["spice", "middle-eastern", "indian"]
   },
   {
     "name": "Koriander gemahlen",
     "url": "https://spice-haus.de/products/koriander-gemahlen",
+    "allergens": "none",
     "tags": ["spice", "indian", "middle-eastern"]
   },
   {
     "name": "Koriander ganz",
     "url": "https://spice-haus.de/products/koriander-ganz",
+    "allergens": "none",
     "tags": ["spice", "indian", "middle-eastern"]
   },
   {
     "name": "Schwarzer Pfeffer gemahlen",
     "url": "https://spice-haus.de/products/schwarzer-pfeffer-gemahlen",
+    "allergens": "none",
     "tags": ["spice", "basic", "pepper"]
   },
   {
     "name": "Schwarzer Pfeffer ganz",
     "url": "https://spice-haus.de/products/schwarzer-pfeffer-ganz",
+    "allergens": "none",
     "tags": ["spice", "basic", "pepper"]
   },
   {
     "name": "Zimt gemahlen",
     "url": "https://spice-haus.de/products/zimt-gemahlen",
+    "allergens": "none",
     "tags": ["spice", "sweet", "baking", "warm"]
   },
   {
     "name": "Zimt Stangen",
     "url": "https://spice-haus.de/products/zimt-stangen",
+    "allergens": "none",
     "tags": ["spice", "sweet", "baking", "warm"]
   },
   {
     "name": "Kardamom gemahlen",
     "url": "https://spice-haus.de/products/kardamom-gemahlen",
+    "allergens": "none",
     "tags": ["spice", "indian", "baking", "sweet"]
   },
   {
     "name": "Kardamom ganz",
     "url": "https://spice-haus.de/products/kardamom-ganz",
+    "allergens": "none",
     "tags": ["spice", "indian", "baking", "sweet"]
   },
   {
     "name": "Ingwer gemahlen",
     "url": "https://spice-haus.de/products/ingwer-gemahlen",
+    "allergens": "none",
     "tags": ["spice", "asian", "baking", "warm"]
   },
   {
     "name": "Knoblauchpulver",
     "url": "https://spice-haus.de/products/knoblauchpulver",
+    "allergens": "none",
     "tags": ["spice", "basic", "savory"]
   },
   {
     "name": "Zwiebelpulver",
     "url": "https://spice-haus.de/products/zwiebelpulver",
+    "allergens": "none",
     "tags": ["spice", "basic", "savory"]
   },
   {
     "name": "Chili Flocken",
     "url": "https://spice-haus.de/products/chili-flocken",
+    "allergens": "none",
     "tags": ["spice", "hot", "italian", "pizza"]
   },
   {
     "name": "Chili gemahlen",
     "url": "https://spice-haus.de/products/chili-gemahlen",
+    "allergens": "none",
     "tags": ["spice", "hot"]
   },
   {
     "name": "Oregano getrocknet",
     "url": "https://spice-haus.de/products/oregano-getrocknet",
+    "allergens": "none",
     "tags": ["herb", "italian", "mediterranean"]
   },
   {
     "name": "Thymian getrocknet",
     "url": "https://spice-haus.de/products/thymian-getrocknet",
+    "allergens": "none",
     "tags": ["herb", "french", "mediterranean"]
   },
   {
     "name": "Rosmarin getrocknet",
     "url": "https://spice-haus.de/products/rosmarin-getrocknet",
+    "allergens": "none",
     "tags": ["herb", "italian", "mediterranean"]
   },
   {
     "name": "Basilikum getrocknet",
     "url": "https://spice-haus.de/products/basilikum-getrocknet",
+    "allergens": "none",
     "tags": ["herb", "italian"]
   },
   {
     "name": "Lorbeerblätter",
     "url": "https://spice-haus.de/products/lorbeerblätter",
+    "allergens": "none",
     "tags": ["herb", "basic", "savory"]
   },
   {
     "name": "Muskatnuss gemahlen",
     "url": "https://spice-haus.de/products/muskatnuss-gemahlen",
+    "allergens": "none",
     "tags": ["spice", "baking", "warm", "savory"]
   },
   {
     "name": "Nelken gemahlen",
     "url": "https://spice-haus.de/products/nelken-gemahlen",
+    "allergens": "none",
     "tags": ["spice", "baking", "warm"]
   },
   {
     "name": "Nelken ganz",
     "url": "https://spice-haus.de/products/nelken-ganz",
+    "allergens": "none",
     "tags": ["spice", "baking", "warm"]
   },
   {
     "name": "Garam Masala",
     "url": "https://spice-haus.de/products/garam-masala",
+    "allergens": "none",
     "tags": ["spice-blend", "indian"]
   },
   {
     "name": "Curry Pulver mild",
     "url": "https://spice-haus.de/products/curry-pulver-mild",
+    "allergens": "contains mustard",
     "tags": ["spice-blend", "indian", "mild"]
   },
   {
     "name": "Curry Pulver scharf",
     "url": "https://spice-haus.de/products/curry-pulver-scharf",
+    "allergens": "contains mustard",
     "tags": ["spice-blend", "indian", "hot"]
   },
   {
     "name": "Ras el Hanout",
     "url": "https://spice-haus.de/products/ras-el-hanout",
+    "allergens": "none",
     "tags": ["spice-blend", "moroccan", "north-african"]
   },
   {
     "name": "Berbere",
     "url": "https://spice-haus.de/products/berbere",
+    "allergens": "none",
     "tags": ["spice-blend", "ethiopian", "hot"]
   },
   {
     "name": "Za'atar",
     "url": "https://spice-haus.de/products/zaatar",
+    "allergens": "contains sesame",
     "tags": ["spice-blend", "middle-eastern"]
   },
   {
     "name": "Basmati Reis",
     "url": "https://spice-haus.de/products/basmati-reis",
+    "allergens": "none",
     "tags": ["grain", "rice", "indian"]
   },
   {
     "name": "Jasmin Reis",
     "url": "https://spice-haus.de/products/jasmin-reis",
+    "allergens": "none",
     "tags": ["grain", "rice", "asian"]
   },
   {
     "name": "Rote Linsen",
     "url": "https://spice-haus.de/products/rote-linsen",
+    "allergens": "none",
     "tags": ["legume", "protein", "indian"]
   },
   {
     "name": "Grüne Linsen",
-    "url": "https://spice-haus.de/products/grüne-linsen",
+    "url": "https://spice-haus.de/products/gruene-linsen",
+    "allergens": "none",
     "tags": ["legume", "protein", "french"]
   },
   {
     "name": "Kichererbsen",
     "url": "https://spice-haus.de/products/kichererbsen",
+    "allergens": "none",
     "tags": ["legume", "protein", "middle-eastern"]
   },
   {
     "name": "Quinoa",
     "url": "https://spice-haus.de/products/quinoa",
+    "allergens": "naturally gluten-free; may contain traces of gluten",
     "tags": ["grain", "protein", "gluten-free"]
   },
   {
     "name": "Schwarzer Sesam",
     "url": "https://spice-haus.de/products/schwarzer-sesam",
+    "allergens": "contains sesame",
     "tags": ["seed", "asian", "topping"]
   },
   {
     "name": "Weißer Sesam",
     "url": "https://spice-haus.de/products/weisser-sesam",
+    "allergens": "contains sesame",
     "tags": ["seed", "asian", "topping"]
   },
   {
     "name": "Leinsamen",
     "url": "https://spice-haus.de/products/leinsamen",
+    "allergens": "none",
     "tags": ["seed", "healthy", "baking"]
   },
   {
     "name": "Chiasamen",
     "url": "https://spice-haus.de/products/chiasamen",
+    "allergens": "none",
     "tags": ["seed", "healthy", "superfood"]
   },
   {
     "name": "Senfsamen gelb",
     "url": "https://spice-haus.de/products/senfsamen-gelb",
+    "allergens": "contains mustard",
     "tags": ["spice", "indian", "pickling"]
   },
   {
     "name": "Fenchelsamen",
     "url": "https://spice-haus.de/products/fenchelsamen",
+    "allergens": "none",
     "tags": ["spice", "digestive", "italian"]
   },
   {
     "name": "Bockshornkleesamen",
     "url": "https://spice-haus.de/products/bockshornkleesamen",
+    "allergens": "none",
     "tags": ["spice", "indian", "bitter"]
   },
   {
     "name": "Kokosmilch",
     "url": "https://spice-haus.de/products/kokosmilch",
+    "allergens": "none",
     "tags": ["pantry", "asian", "creamy"]
   },
   {
     "name": "Tamarindenpaste",
     "url": "https://spice-haus.de/products/tamarindenpaste",
+    "allergens": "none",
     "tags": ["condiment", "indian", "asian", "sour"]
   },
   {
     "name": "Sumac",
     "url": "https://spice-haus.de/products/sumac",
+    "allergens": "none",
     "tags": ["spice", "middle-eastern", "sour"]
   }
 ]

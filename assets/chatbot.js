@@ -1,10 +1,11 @@
 (function () {
   'use strict';
 
-  var cfg      = window.SpicehausChatbot || {};
-  var ajaxUrl  = cfg.ajaxUrl || '/wp-admin/admin-ajax.php';
-  var nonce    = cfg.nonce   || '';
-  var i18n     = cfg.i18n    || {};
+  var cfg            = window.SpicehausChatbot || {};
+  var ajaxUrl        = cfg.ajaxUrl        || '/wp-admin/admin-ajax.php';
+  var nonce          = cfg.nonce          || '';
+  var i18n           = cfg.i18n          || {};
+  var productContext = cfg.productContext || null; // set by PHP when ?spicehaus_product=slug
 
   var history   = [];
   var isOpen    = false;
@@ -22,6 +23,10 @@
   function buildWidget() {
     var root = document.getElementById('spicehaus-chatbot-root');
     if (!root) return;
+
+    var greeting = productContext
+      ? esc(i18n.productGreeting || '🌶️ Loading product info...')
+      : esc(i18n.greeting || 'Hello! Ask me for a recipe or scan a barcode 📷 to get ideas using our Spicehaus products. 🌿');
 
     root.innerHTML =
       '<button class="sc-toggle" id="sc-toggle" aria-label="Open recipe chatbot">' +
@@ -44,9 +49,7 @@
 
         '<div class="sc-messages" id="sc-messages">' +
           '<div class="sc-msg sc-msg--bot">' +
-            '<div class="sc-bubble">' +
-              esc(i18n.greeting || 'Hello! Ask me for a recipe or scan a barcode 📷 to get ideas using our Spicehaus products. 🌿') +
-            '</div>' +
+            '<div class="sc-bubble">' + greeting + '</div>' +
           '</div>' +
         '</div>' +
 
@@ -76,6 +79,77 @@
       '</div>';
 
     bindEvents();
+
+    // Auto-start: open bot and send product query when coming from a QR code scan
+    if (productContext && productContext.name) {
+      openWindow();
+      setTimeout(function () { triggerProductPage(productContext); }, 400);
+    }
+  }
+
+  /* ── QR product page auto-start ─────────────────────────────── */
+
+  function triggerProductPage(ctx) {
+    var allergenNote = ctx.allergens && ctx.allergens !== 'none' && ctx.allergens !== ''
+      ? ' Allergen information: ' + ctx.allergens + '.'
+      : '';
+
+    // The hidden message sent to the AI (not shown in the bubble)
+    var aiMessage = '[PRODUCT_PAGE: ' + ctx.name + ']' + allergenNote +
+      ' Please introduce this product, give allergen information, and suggest 1-2 recipes using it together with other Spicehaus products from the catalog. Include shop links.';
+
+    // Replace the greeting bubble with a product card instead of a plain user bubble
+    replaceGreetingWithProductCard(ctx.name);
+
+    var loadingEl = appendLoading();
+    isLoading = true;
+    setSend(false);
+
+    history.push({ role: 'user', content: aiMessage });
+
+    var fd = new FormData();
+    fd.append('action',  'spicehaus_chat');
+    fd.append('nonce',   nonce);
+    fd.append('message', aiMessage);
+    fd.append('history', JSON.stringify([]));
+
+    fetch(ajaxUrl, { method: 'POST', body: fd })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        loadingEl.remove();
+        if (data.success) {
+          var reply = data.data.reply;
+          appendMessage('bot', reply);
+          history.push({ role: 'assistant', content: reply });
+        } else {
+          appendMessage('bot', i18n.error || 'Something went wrong. Please try again.');
+        }
+      })
+      .catch(function () {
+        loadingEl.remove();
+        appendMessage('bot', i18n.error || 'Something went wrong. Please try again.');
+      })
+      .finally(function () {
+        isLoading = false;
+        setSend(true);
+        var inp = document.getElementById('sc-input');
+        if (inp) inp.focus();
+      });
+  }
+
+  function replaceGreetingWithProductCard(productName) {
+    var area    = msgArea();
+    var first   = area ? area.querySelector('.sc-msg--bot') : null;
+    if (!first) return;
+
+    first.innerHTML =
+      '<div class="sc-bubble sc-product-card">' +
+        '<span class="sc-product-card-icon">🛒</span>' +
+        '<div>' +
+          '<strong>' + esc(productName) + '</strong><br>' +
+          '<small>Getting product info &amp; recipe ideas…</small>' +
+        '</div>' +
+      '</div>';
   }
 
   /* ── Events ─────────────────────────────────────────────────── */
@@ -384,7 +458,7 @@
     html = html.replace(/^(\d+\.\s)/gm, '<br>$1');
 
     // Bullet items
-    html = html.replace(/^[-•★]\s/gm, '<br>• ');
+    html = html.replace(/^[-•★⚠️]\s/gm, '<br>• ');
 
     // Paragraph breaks
     html = html.replace(/\n\n+/g, '</p><p>');

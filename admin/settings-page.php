@@ -44,10 +44,10 @@ function spicehaus_sanitize_products_json( string $input ): string {
 function spicehaus_render_settings_page(): void {
     if ( ! current_user_can( 'manage_options' ) ) return;
 
-    $provider    = get_option( 'spicehaus_chatbot_provider',   'claude' );
-    $claude_key  = get_option( 'spicehaus_chatbot_api_key',    '' );
-    $gemini_key  = get_option( 'spicehaus_chatbot_gemini_key', '' );
-    $products    = get_option( 'spicehaus_chatbot_products',   '' );
+    $provider   = get_option( 'spicehaus_chatbot_provider',   'claude' );
+    $claude_key = get_option( 'spicehaus_chatbot_api_key',    '' );
+    $gemini_key = get_option( 'spicehaus_chatbot_gemini_key', '' );
+    $products   = get_option( 'spicehaus_chatbot_products',   '' );
 
     if ( empty( $products ) ) {
         $file = SPICEHAUS_CHATBOT_PATH . 'data/products.json';
@@ -59,13 +59,18 @@ function spicehaus_render_settings_page(): void {
             );
         }
     }
+
+    $catalog   = spicehaus_get_product_catalog();
+    $site_url  = trailingslashit( home_url() );
+    $csv_nonce = wp_create_nonce( 'spicehaus_csv_import' );
     ?>
     <div class="wrap">
         <h1>🌶️ Spicehaus Recipe Chatbot</h1>
 
         <p>The chatbot widget appears in the <strong>bottom-right corner</strong> on every page of your shop.
-           Visitors can ask recipe questions or <strong>scan a product barcode</strong> to get recipe ideas
-           using your Spicehaus products.</p>
+           Visitors can ask recipe questions, <strong>scan a product barcode</strong>, or scan a
+           <strong>QR code sticker</strong> next to a product to get instant product info, allergen details,
+           and recipe ideas.</p>
 
         <?php settings_errors(); ?>
 
@@ -80,7 +85,7 @@ function spicehaus_render_settings_page(): void {
                         <label style="margin-right:20px">
                             <input type="radio" name="spicehaus_chatbot_provider" value="claude"
                                 <?php checked( $provider, 'claude' ); ?> id="sc_provider_claude">
-                            <strong>Claude</strong> (Anthropic) — <em>Haiku model, very fast & affordable</em>
+                            <strong>Claude</strong> (Anthropic) — <em>Haiku model, very fast &amp; affordable</em>
                         </label>
                         <br><br>
                         <label>
@@ -132,10 +137,9 @@ function spicehaus_render_settings_page(): void {
                 </tr>
             </table>
 
-            <h2>Product Catalog</h2>
-            <p>Edit the JSON array below to match your actual shop products.
-               Each entry needs a <code>name</code> and <code>url</code>.
-               The <code>tags</code> field is optional but helps the AI categorise products.</p>
+            <h2>Product Catalog (JSON)</h2>
+            <p>Edit the JSON array below, or use the <strong>CSV Import</strong> section below to upload your store's product list.
+               Each entry supports: <code>name</code>, <code>url</code>, <code>allergens</code>, <code>tags</code>.</p>
             <table class="form-table" role="presentation">
                 <tr>
                     <th scope="row">
@@ -145,12 +149,12 @@ function spicehaus_render_settings_page(): void {
                         <textarea
                             id="spicehaus_chatbot_products"
                             name="spicehaus_chatbot_products"
-                            rows="30"
+                            rows="20"
                             class="large-text code"
                             spellcheck="false"
                         ><?php echo esc_textarea( $products ); ?></textarea>
                         <p class="description">
-                            Format: <code>[{"name": "Kurkuma gemahlen", "url": "https://spice-haus.de/products/kurkuma", "tags": ["spice", "indian"]}]</code>
+                            Format: <code>[{"name": "Kurkuma gemahlen", "url": "https://spice-haus.de/products/kurkuma", "allergens": "none", "tags": ["spice", "indian"]}]</code>
                         </p>
                     </td>
                 </tr>
@@ -160,20 +164,76 @@ function spicehaus_render_settings_page(): void {
         </form>
 
         <hr>
-        <h2>Preview &amp; Features</h2>
+
+        <!-- ── CSV Import ───────────────────────────────────────────── -->
+        <h2>📥 Import Products from CSV</h2>
+        <p>Upload a CSV file to replace the product catalog. The bot will use these products to suggest recipes
+           and generate QR code URLs for stickers.</p>
+        <p><strong>Required columns:</strong> <code>name</code>, <code>url</code><br>
+           <strong>Optional columns:</strong> <code>allergens</code>, <code>tags</code> (use <code>|</code> or <code>,</code> to separate multiple tags)</p>
         <p>
-            <a href="<?php echo esc_url( home_url( '/' ) ); ?>" target="_blank" class="button button-secondary">
-                Open Shop (chatbot — bottom-right corner)
+            <a href="<?php echo esc_url( SPICEHAUS_CHATBOT_URL . 'data/sample-products.csv' ); ?>" download class="button button-secondary">
+                ⬇ Download sample CSV template
             </a>
         </p>
-        <ul>
-            <li><strong>Recipe chat</strong> — visitors type questions and get recipes using your products.</li>
-            <li><strong>Barcode scan</strong> — visitors tap 📷 to scan any grocery barcode; the chatbot identifies the product and suggests a recipe with Spicehaus seasonings. Works in Chrome and Safari 17.4+. Other browsers show a manual entry fallback.</li>
-        </ul>
+
+        <div id="sc-csv-wrap">
+            <input type="file" id="sc-csv-file" accept=".csv" style="margin-right:10px">
+            <button id="sc-csv-import" class="button button-primary">Import CSV</button>
+            <span id="sc-csv-status" style="margin-left:12px; color:#666;"></span>
+        </div>
+        <pre id="sc-csv-preview" style="display:none; margin-top:12px; max-height:200px; overflow:auto; background:#f5f5f5; padding:10px; font-size:12px;"></pre>
+
+        <hr>
+
+        <!-- ── QR Code Generator ────────────────────────────────────── -->
+        <h2>📱 QR Code Stickers</h2>
+        <p>Print these QR codes and stick them next to the corresponding products in your store.
+           When a customer scans the code, the chatbot opens automatically, explains the product,
+           shows allergen info, and suggests recipes using ingredients from your store.</p>
+        <p>
+            <button onclick="window.print()" class="button button-secondary">🖨 Print All QR Codes</button>
+        </p>
+
+        <div id="sc-qr-grid" style="display:flex; flex-wrap:wrap; gap:20px; margin-top:16px;">
+        <?php foreach ( $catalog as $product ) :
+            if ( empty( $product['name'] ) ) continue;
+            $slug       = spicehaus_product_slug( $product['name'] );
+            $qr_url     = $site_url . '?spicehaus_product=' . rawurlencode( $slug );
+            $allergens  = ! empty( $product['allergens'] ) && $product['allergens'] !== 'none'
+                            ? $product['allergens']
+                            : 'Keine / None';
+            $qr_img_url = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' . rawurlencode( $qr_url );
+        ?>
+            <div class="sc-qr-card" style="border:1px solid #ddd; border-radius:8px; padding:16px; text-align:center; width:180px; background:#fff;">
+                <img src="<?php echo esc_url( $qr_img_url ); ?>"
+                     alt="QR <?php echo esc_attr( $product['name'] ); ?>"
+                     width="150" height="150"
+                     style="display:block; margin:0 auto 8px;">
+                <strong style="display:block; font-size:13px; margin-bottom:4px;"><?php echo esc_html( $product['name'] ); ?></strong>
+                <small style="color:#888; font-size:11px;">⚠️ <?php echo esc_html( $allergens ); ?></small><br>
+                <a href="<?php echo esc_url( $qr_url ); ?>" target="_blank"
+                   style="font-size:10px; color:#aaa; word-break:break-all;">Test link</a>
+            </div>
+        <?php endforeach; ?>
+        </div>
+
+        <style>
+        @media print {
+            /* Hide everything except QR cards */
+            body > *:not(.wrap) { display: none !important; }
+            .wrap > *:not(#sc-qr-grid):not(h2:last-of-type) { display: none !important; }
+            #sc-qr-grid { display: flex !important; flex-wrap: wrap; gap: 16px; }
+            .sc-qr-card { page-break-inside: avoid; border: 1px solid #ccc !important; }
+            button, a.button { display: none !important; }
+            p, hr { display: none !important; }
+        }
+        </style>
     </div>
 
     <script>
     (function () {
+        // Provider toggle
         var radios = document.querySelectorAll('input[name="spicehaus_chatbot_provider"]');
         function toggle() {
             var val = document.querySelector('input[name="spicehaus_chatbot_provider"]:checked').value;
@@ -181,6 +241,46 @@ function spicehaus_render_settings_page(): void {
             document.getElementById('sc_row_gemini').style.display = val === 'gemini' ? '' : 'none';
         }
         radios.forEach(function (r) { r.addEventListener('change', toggle); });
+
+        // CSV import
+        document.getElementById('sc-csv-import').addEventListener('click', function () {
+            var file = document.getElementById('sc-csv-file').files[0];
+            if (!file) { alert('Please select a CSV file first.'); return; }
+
+            var status  = document.getElementById('sc-csv-status');
+            var preview = document.getElementById('sc-csv-preview');
+            status.textContent  = 'Importing…';
+            preview.style.display = 'none';
+
+            var fd = new FormData();
+            fd.append('action',   'spicehaus_import_csv');
+            fd.append('nonce',    '<?php echo esc_js( $csv_nonce ); ?>');
+            fd.append('csv_file', file);
+
+            fetch('<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>', {
+                method: 'POST',
+                body: fd,
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.success) {
+                    status.style.color  = 'green';
+                    status.textContent  = '✅ ' + data.data.message + ' Reload the page to see the updated QR codes.';
+                    // Update the JSON textarea live
+                    var ta = document.getElementById('spicehaus_chatbot_products');
+                    if (ta) ta.value = data.data.json;
+                    preview.textContent   = data.data.json;
+                    preview.style.display = 'block';
+                } else {
+                    status.style.color = 'red';
+                    status.textContent = '❌ ' + (data.data && data.data.message ? data.data.message : 'Import failed.');
+                }
+            })
+            .catch(function () {
+                status.style.color = 'red';
+                status.textContent = '❌ Network error. Please try again.';
+            });
+        });
     })();
     </script>
     <?php

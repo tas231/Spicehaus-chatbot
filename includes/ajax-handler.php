@@ -78,7 +78,7 @@ function spicehaus_handle_barcode(): void {
     $url      = 'https://world.openfoodfacts.org/api/v0/product/' . rawurlencode( $barcode ) . '.json';
     $response = wp_remote_get( $url, [
         'timeout' => 8,
-        'headers' => [ 'User-Agent' => 'SpicehausRecipeChatbot/1.1 (https://spice-haus.de)' ],
+        'headers' => [ 'User-Agent' => 'SpicehausRecipeChatbot/1.2 (https://spice-haus.de)' ],
     ] );
 
     if ( is_wp_error( $response ) ) {
@@ -109,6 +109,50 @@ function spicehaus_handle_barcode(): void {
     ] );
 }
 
+/* ── CSV import AJAX ────────────────────────────────────────────────────── */
+
+add_action( 'wp_ajax_spicehaus_import_csv', 'spicehaus_handle_csv_import' );
+
+function spicehaus_handle_csv_import(): void {
+    check_ajax_referer( 'spicehaus_csv_import', 'nonce' );
+
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( [ 'message' => 'Permission denied.' ], 403 );
+    }
+
+    if ( empty( $_FILES['csv_file'] ) || $_FILES['csv_file']['error'] !== UPLOAD_ERR_OK ) {
+        wp_send_json_error( [ 'message' => 'No file uploaded or upload error.' ], 400 );
+    }
+
+    $file     = $_FILES['csv_file'];
+    $ext      = strtolower( pathinfo( $file['name'], PATHINFO_EXTENSION ) );
+    if ( $ext !== 'csv' ) {
+        wp_send_json_error( [ 'message' => 'Only CSV files are allowed.' ], 400 );
+    }
+
+    $content = file_get_contents( $file['tmp_name'] );
+    if ( $content === false ) {
+        wp_send_json_error( [ 'message' => 'Could not read uploaded file.' ], 500 );
+    }
+
+    // Strip BOM if present
+    $content = ltrim( $content, "\xEF\xBB\xBF" );
+
+    $products = spicehaus_parse_csv( $content );
+    if ( is_wp_error( $products ) ) {
+        wp_send_json_error( [ 'message' => $products->get_error_message() ], 400 );
+    }
+
+    $json = wp_json_encode( $products, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE );
+    update_option( 'spicehaus_chatbot_products', $json );
+
+    wp_send_json_success( [
+        'message' => sprintf( '%d products imported successfully.', count( $products ) ),
+        'count'   => count( $products ),
+        'json'    => $json,
+    ] );
+}
+
 /* ── System prompt ──────────────────────────────────────────────────────── */
 
 function spicehaus_build_system_prompt( array $catalog ): string {
@@ -119,17 +163,20 @@ function spicehaus_build_system_prompt( array $catalog ): string {
         if ( ! empty( $product['url'] ) ) {
             $line .= ' → ' . $product['url'];
         }
+        if ( ! empty( $product['allergens'] ) && $product['allergens'] !== 'none' ) {
+            $line .= ' [⚠️ ' . $product['allergens'] . ']';
+        }
         if ( ! empty( $product['tags'] ) && is_array( $product['tags'] ) ) {
-            $line .= ' [' . implode( ', ', $product['tags'] ) . ']';
+            $line .= ' (' . implode( ', ', $product['tags'] ) . ')';
         }
         $lines[] = $line;
     }
     $product_list = implode( "\n", $lines );
 
     return <<<PROMPT
-You are the friendly recipe assistant for Spicehaus (spice-haus.de), a German online shop that sells quality spices, grains, and groceries.
+You are the friendly recipe assistant for Spicehaus (spice-haus.de), a German shop that sells quality spices, grains, and groceries.
 
-Your role is to suggest delicious, practical recipes that use products from the Spicehaus catalog.
+Your primary goal is to help customers discover delicious recipes using products from the Spicehaus catalog — and to upsell by highlighting which catalog items they can pick up in the store.
 
 STRICT RULES:
 1. ONLY reference spices and pantry items from the Spicehaus catalog below. Everyday basics like water, oil, butter, eggs, flour, fresh vegetables, and meat are always assumed available — you do not need to list them unless they are in the catalog.
@@ -139,7 +186,13 @@ STRICT RULES:
 5. End each recipe with a "Shop these ingredients" block listing the Spicehaus products used with their URLs (format: **Product Name**: URL).
 6. If asked for a recipe requiring spices not in the catalog, say so politely and suggest what you CAN make.
 7. Keep responses concise — one recipe per reply unless asked for more. Be warm and enthusiastic.
-8. BARCODE SCANS: When a visitor says they scanned a product (message contains "Scanned:"), treat that product as the main ingredient. Suggest a recipe featuring it alongside Spicehaus spices and ingredients from the catalog. The scanned item does not need to be in the catalog.
+8. UPSELL: Always try to incorporate additional Spicehaus products into recipes beyond the obvious main spice — suggest complementary items the customer can also grab in the store.
+9. BARCODE SCANS: When a visitor says they scanned a product (message contains "Scanned:"), treat that product as the main ingredient. Suggest a recipe featuring it alongside Spicehaus spices and ingredients from the catalog. The scanned item does not need to be in the catalog.
+10. PRODUCT PAGE (QR code scan): When the message starts with "[PRODUCT_PAGE:", a customer just scanned a QR code sticker in the store next to that product. Respond with:
+    a) A warm welcome (1–2 sentences) about that product — what it is, its origin, best uses.
+    b) An "⚠️ Allergen information" section (even if there are none — state "keine Allergene / no allergens").
+    c) One or two recipe ideas that feature this product as the star, with other Spicehaus items as supporting ingredients.
+    d) End with the "Shop these ingredients" block as usual.
 
 SPICEHAUS PRODUCT CATALOG:
 $product_list
@@ -151,7 +204,7 @@ PROMPT;
 function spicehaus_call_claude( string $api_key, string $system, array $messages ): string|\WP_Error {
     $body = wp_json_encode( [
         'model'      => 'claude-haiku-4-5-20251001',
-        'max_tokens' => 1200,
+        'max_tokens' => 1500,
         'system'     => $system,
         'messages'   => $messages,
     ] );
@@ -183,7 +236,6 @@ function spicehaus_call_claude( string $api_key, string $system, array $messages
 /* ── Gemini API ─────────────────────────────────────────────────────────── */
 
 function spicehaus_call_gemini( string $api_key, string $system, array $messages ): string|\WP_Error {
-    // Convert Claude-style messages (role: assistant) to Gemini style (role: model)
     $contents = [];
     foreach ( $messages as $msg ) {
         $contents[] = [
@@ -198,7 +250,7 @@ function spicehaus_call_gemini( string $api_key, string $system, array $messages
         ],
         'contents'         => $contents,
         'generationConfig' => [
-            'maxOutputTokens' => 1200,
+            'maxOutputTokens' => 1500,
             'temperature'     => 0.7,
         ],
     ] );

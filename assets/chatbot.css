@@ -380,6 +380,22 @@
 }
 .sc-barcode-go:hover { background: var(--sc-accent-dark); }
 
+/* ── Product card (QR code landing) ──────────────────────────────────────── */
+
+.sc-product-card {
+  display:     flex;
+  align-items: center;
+  gap:         10px;
+  background:  var(--sc-bg-msg);
+  border:      1px solid var(--sc-accent);
+  border-radius: var(--sc-radius-sm);
+}
+
+.sc-product-card-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
 /* ── Mobile ───────────────────────────────────────────────────────────────── */
 
 @media (max-width: 480px) {
