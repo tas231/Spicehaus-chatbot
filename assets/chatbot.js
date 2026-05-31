@@ -122,12 +122,13 @@
           appendMessage('bot', reply);
           history.push({ role: 'assistant', content: reply });
         } else {
-          appendMessage('bot', i18n.error || 'Something went wrong. Please try again.');
+          var errMsg = (data.data && data.data.message) ? data.data.message : (i18n.error || 'Something went wrong. Please try again.');
+          appendMessage('bot', '⚠️ Error: ' + errMsg);
         }
       })
-      .catch(function () {
+      .catch(function (err) {
         loadingEl.remove();
-        appendMessage('bot', i18n.error || 'Something went wrong. Please try again.');
+        appendMessage('bot', '⚠️ Network error — could not reach the server. (' + (err && err.message ? err.message : 'unknown') + ')');
       })
       .finally(function () {
         isLoading = false;
@@ -229,12 +230,13 @@
           history.push({ role: 'assistant', content: reply });
           if (history.length > 20) history = history.slice(-20);
         } else {
-          appendMessage('bot', i18n.error || 'Something went wrong. Please try again.');
+          var errMsg = (data.data && data.data.message) ? data.data.message : (i18n.error || 'Something went wrong. Please try again.');
+          appendMessage('bot', '⚠️ Error: ' + errMsg);
         }
       })
-      .catch(function () {
+      .catch(function (err) {
         loadingEl.remove();
-        appendMessage('bot', i18n.error || 'Something went wrong. Please try again.');
+        appendMessage('bot', '⚠️ Network error — could not reach the server. (' + (err && err.message ? err.message : 'unknown') + ')');
       })
       .finally(function () {
         isLoading = false;
